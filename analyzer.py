@@ -53,6 +53,16 @@ def analyze_csv(file_path,columns=None,output_plot_dir=None):
                         
                     else:
                         print(f"Column '{col}' is not numeric. Skipping statistics.")
+                        if series.dtype == 'object':
+                            print(f"Column '{col}' is of type 'object'. It has been identified as Categorical data. Value Count will be displayed.")
+                            series.dropna(inplace=True)
+                            value_counts = series.value_counts()
+                            if value_counts.empty:
+                                print(f"Column '{col}' is empty after dropping NaN values. No value counts to display.")
+                            else:
+                                print(f"Value counts for column '{col}':")
+                                print(value_counts)
+                            print("-" * 40)
                 else:
                     print(f"Column '{col}' not found in the DataFrame.")
         else:
@@ -65,6 +75,18 @@ def analyze_csv(file_path,columns=None,output_plot_dir=None):
                     print(f"Column '{col}' is empty after dropping NaN values. No statistics to display.")
                 else: 
                     print_stats(cleaned_series,col)
+                    analyzed_columns.append(col) 
+        if len(analyzed_columns)>1:
+            print("\n Correlation matrix for analyzed columns:")
+            print('-' * 40)
+            correlation_matrix = df[analyzed_columns].corr()
+            print(correlation_matrix)
+            print('-' * 40)
+        elif len(analyzed_columns) == 1:
+            print(f"\nOnly one column '{analyzed_columns[0]}' was analyzed. No correlation matrix to display.")
+        else:
+            print("No numeric columns were analyzed. No correlation matrix to display.")
+        
         return True
     except FileNotFoundError:
         print(f"File {file_path} not found. Please check the path and try again.")
