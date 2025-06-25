@@ -10,6 +10,20 @@ import os
 
 
 def analyze_csv(file_path,columns=None,output_plot_dir=None,requested_stats=None):
+    """Analyze a CSV file and print descriptive statistics for specified columns.
+    args:
+     file_path (str): Path to the CSV file to be analyzed.
+     columns (list, optional): List of column names to analyze. If None, all numeric columns will be analyzed.
+     output_plot_dir (str, optional): Directory to save histograms. If None, histograms will not be saved.
+     requested_stats (list, optional): List of statistics to compute. Default is ['mean', 'median', 'std', 'min', 'max', 'count'].
+     
+     Functions of  the script:
+     - Reads a CSV file into a pandas DataFrame.
+     - Analyzes specified columns or all numeric columns if none are specified.
+     - Computes and prints descriptive statistics for each column.
+     - Generates and saves histograms for each analyzed column if an output directory is provided.
+     - Computes and prints a correlation matrix for the analyzed columns.
+     - Handles various exceptions related to file reading and data processing."""
     try:
         df=pd.read_csv(file_path)
         analyzed_columns=[]
@@ -86,6 +100,12 @@ def analyze_csv(file_path,columns=None,output_plot_dir=None,requested_stats=None
 
 
 def print_stats(series,column_name,stats_to_compute):
+    """Print descriptive statistics for a given pandas Series.
+    args:
+        series (pd.Series): The pandas Series containing numeric data.
+        column_name (str): The name of the column for labeling the statistics.
+        stats_to_compute (list): List of statistics to compute. Default is ['mean', 'median', 'std', 'min', 'max', 'count'].
+    """
     if series.empty:
         print("Series is empty. No statistics to display.")
         return
@@ -115,6 +135,12 @@ def print_stats(series,column_name,stats_to_compute):
 
 
 def generate_histogram(series, col, output_dir):
+    """Generate and save a histogram for the given series.
+    args:
+        series (pd.Series): The pandas Series containing numeric data.
+        col (str): The name of the column for labeling the histogram.
+        output_dir (str): The directory where the histogram will be saved.
+    """
     plot_name=os.path.join(output_dir, f"{col}_histogram.png")
     plt.figure(figsize=(10, 6))
     plt.hist(series, bins=30, color='blue', alpha=0.7)
@@ -132,6 +158,10 @@ def generate_histogram(series, col, output_dir):
 
 
 def handling_categorical(series):
+    """Handle categorical data by displaying value counts.
+    args:
+        series (pd.Series): The pandas Series containing categorical data.
+    """
     if series.empty:
         print("Series is empty. No value counts to display.")
         return
@@ -149,6 +179,8 @@ def handling_categorical(series):
 
 
 def parser_setup():
+    """Set up the command line argument parser.
+    """
     parser = argparse.ArgumentParser(description="Analyze a CSV file and provide descriptive statistics."
                                      )
     parser.add_argument("--filepath", type=str, required=True,
@@ -157,7 +189,7 @@ def parser_setup():
                         help="List of specific columns to analyze. (example=['column1', 'column2']), If not provided, all numeric columns will be analyzed.")
     parser.add_argument("-op","--output_plot_dir",type=str,default=None,
                         help="Directory path to save generated histograms. If provided, histograms will be created for numerically analyzed columns.")
-    parser.add_argument("--choices",nargs='+', choices=['mean', 'median', 'std', 'min', 'max', 'count'],default=['mean', 'median', 'std', 'min', 'max', 'count'],
+    parser.add_argument("--stats",nargs='+', choices=['mean', 'median', 'std', 'min', 'max', 'count'],default=['mean', 'median', 'std', 'min', 'max', 'count'],
                         help="List of descriptive statistics to display. Default is all statistics (mean, median, std, min, max, count).")
     return parser.parse_args()
 
