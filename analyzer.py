@@ -33,22 +33,8 @@ def analyze_csv(file_path,columns=None,output_plot_dir=None):
                             
                             print_stats(cleaned_series,col)
                             analyzed_columns.append(col) 
-                            if args.output_plot_dir:
-                                os.makedirs(args.output_plot_dir, exist_ok=True)
-                                plot_name=os.path.join(args.output_plot_dir, f"{col}_histogram.png")
-                                plt.figure(figsize=(10, 6))
-                                plt.hist(cleaned_series, bins=30, color='blue', alpha=0.7)
-                                plt.title(f"Histogram of {col}")
-                                plt.xlabel(col)
-                                plt.ylabel("Frequency")
-                                plt.grid(axis='y', alpha=0.75)
-                                try:
-                                    plt.savefig(plot_name)
-                                    print(f"Histogram for column '{col}' saved as {plot_name}.")
-                                except Exception as e:
-                                    print(f"Error saving histogram for column '{col}': {e}")
-                                finally:
-                                    plt.close()
+                            if output_plot_dir:
+                                generate_histogram(cleaned_series, col, output_plot_dir)
                                 
                         
                     else:
@@ -114,7 +100,21 @@ def print_stats(series,column_name):
     print(f"Count: {series.count()}")
     print("-" * 40)
     
-
+def generate_histogram(series, col, output_dir):
+    plot_name=os.path.join(output_dir, f"{col}_histogram.png")
+    plt.figure(figsize=(10, 6))
+    plt.hist(series, bins=30, color='blue', alpha=0.7)
+    plt.title(f"Histogram of {col}")
+    plt.xlabel(col)
+    plt.ylabel("Frequency")
+    plt.grid(axis='y', alpha=0.75)
+    try:
+        plt.savefig(plot_name)
+        print(f"Histogram for column '{col}' saved as {plot_name}.")
+    except Exception as e:
+        print(f"Error saving histogram for column '{col}': {e}")
+    finally:
+        plt.close()
 def parser_setup():
     parser = argparse.ArgumentParser(description="Analyze a CSV file and provide descriptive statistics."
                                      )
