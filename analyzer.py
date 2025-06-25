@@ -9,7 +9,7 @@ import os
 #A CLI tool to give descriptive statistics of a given CSV file.
 
 
-def analyze_csv(file_path,columns=None,output_plot_dir=None):
+def analyze_csv(file_path,columns=None,output_plot_dir=None,requested_stats=None):
     try:
         df=pd.read_csv(file_path)
         analyzed_columns=[]
@@ -31,24 +31,16 @@ def analyze_csv(file_path,columns=None,output_plot_dir=None):
                             print(f"Column '{col}' is empty after dropping NaN values. No statistics to display.")
                         else:
                             
-                            print_stats(cleaned_series,col)
+                            print_stats(cleaned_series,col,requested_stats)
                             analyzed_columns.append(col) 
                             if output_plot_dir:
-                                generate_histogram(cleaned_series, col, output_plot_dir)
+                                generate_histogram(cleaned_series, col, output_plot_dir,)
                                 
                         
                     else:
                         print(f"Column '{col}' is not numeric. Skipping statistics.")
-                        if series.dtype == 'object':
-                            print(f"Column '{col}' is of type 'object'. It has been identified as Categorical data. Value Count will be displayed.")
-                            series.dropna(inplace=True)
-                            value_counts = series.value_counts()
-                            if value_counts.empty:
-                                print(f"Column '{col}' is empty after dropping NaN values. No value counts to display.")
-                            else:
-                                print(f"Value counts for column '{col}':")
-                                print(value_counts)
-                            print("-" * 40)
+                        handling_categorical(series)
+                        print("-" * 40)
                 else:
                     print(f"Column '{col}' not found in the DataFrame.")
         else:
@@ -60,7 +52,7 @@ def analyze_csv(file_path,columns=None,output_plot_dir=None):
                 if cleaned_series.empty:
                     print(f"Column '{col}' is empty after dropping NaN values. No statistics to display.")
                 else: 
-                    print_stats(cleaned_series,col)
+                    print_stats(cleaned_series,col,requested_stats)
                     analyzed_columns.append(col) 
         if len(analyzed_columns)>1:
             print("\n Correlation matrix for analyzed columns:")
@@ -74,6 +66,8 @@ def analyze_csv(file_path,columns=None,output_plot_dir=None):
             print("No numeric columns were analyzed. No correlation matrix to display.")
         
         return True
+    
+    
     except FileNotFoundError:
         print(f"File {file_path} not found. Please check the path and try again.")
         sys.exit(1)
@@ -87,19 +81,39 @@ def analyze_csv(file_path,columns=None,output_plot_dir=None):
         print(f"Error reading {file_path}: {e}")
         sys.exit(1)
     
-def print_stats(series,column_name):
+
+
+
+
+def print_stats(series,column_name,stats_to_compute):
     if series.empty:
         print("Series is empty. No statistics to display.")
         return
     print(f"Descriptive statistics for column '{column_name}':")
-    print(f"Mean: {series.mean():.2f}")
-    print(f"Median: {series.median():.2f}")
-    print(f"Standard Deviation: {series.std():.2f}")
-    print(f"Minimum: {series.min():.2f}")
-    print(f"Maximum: {series.max():.2f}")
-    print(f"Count: {series.count()}")
+    available_calculations = {
+        'mean': lambda s: f"  Mean: {s.mean():.2f}",
+        'median': lambda s: f"  Median: {s.median():.2f}",
+        'std': lambda s: f"  Standard Deviation: {s.std():.2f}",
+        'min': lambda s: f"  Minimum: {s.min():.2f}",
+        'max': lambda s: f"  Maximum: {s.max():.2f}",
+        'count': lambda s: f"  Count: {s.count()}"
+    }
+    for stat in stats_to_compute:
+        if stat in available_calculations:
+            try:
+                print(available_calculations[stat](series))
+            except Exception as e:
+                print(f"Error calculating {stat} for column '{column_name}': {e}")
+        else:
+            print(f"Statistic '{stat}' is not recognized. Available options are: {', '.join(available_calculations.keys())}")
     print("-" * 40)
-    
+
+
+
+
+
+
+
 def generate_histogram(series, col, output_dir):
     plot_name=os.path.join(output_dir, f"{col}_histogram.png")
     plt.figure(figsize=(10, 6))
@@ -115,6 +129,25 @@ def generate_histogram(series, col, output_dir):
         print(f"Error saving histogram for column '{col}': {e}")
     finally:
         plt.close()
+
+
+def handling_categorical(series):
+    if series.empty:
+        print("Series is empty. No value counts to display.")
+        return
+    cleaned_series = series.dropna()
+    if cleaned_series.empty:
+        print("Series is empty after dropping NaN values. No value counts to display.")
+        return
+    value_counts = cleaned_series.value_counts()
+    if value_counts.empty:
+        print("Series is empty. No value counts to display.")
+    else:
+        print(f"Value counts for categorical data:")
+        print(value_counts)
+        print("-" * 40)
+
+
 def parser_setup():
     parser = argparse.ArgumentParser(description="Analyze a CSV file and provide descriptive statistics."
                                      )
@@ -124,14 +157,15 @@ def parser_setup():
                         help="List of specific columns to analyze. (example=['column1', 'column2']), If not provided, all numeric columns will be analyzed.")
     parser.add_argument("-op","--output_plot_dir",type=str,default=None,
                         help="Directory path to save generated histograms. If provided, histograms will be created for numerically analyzed columns.")
-    
+    parser.add_argument("--choices",nargs='+', choices=['mean', 'median', 'std', 'min', 'max', 'count'],default=['mean', 'median', 'std', 'min', 'max', 'count'],
+                        help="List of descriptive statistics to display. Default is all statistics (mean, median, std, min, max, count).")
     return parser.parse_args()
 
 
 
 if __name__ == "__main__":
     args = parser_setup()
-    if analyze_csv(args.filepath,args.columns,args.output_plot_dir): 
+    if analyze_csv(args.filepath,args.columns,args.output_plot_dir,args.choices): 
         print("Analysis completed successfully.")
     
         
